@@ -307,13 +307,61 @@ h1 {
 }
 
 .palette-item-icon { font-size: 0.9rem; width: 22px; text-align: center; flex-shrink: 0; }
-.palette-item-label { font-size: 0.78rem; color: rgba(255,255,255,0.7); }
+.palette-item-label { font-size: 0.78rem; color: rgba(255,255,255,0.7); flex: 1; }
 .palette-item-hint {
   margin-left: auto;
   font-size: 0.6rem;
   color: rgba(255,255,255,0.2);
   font-family: 'SF Mono', monospace;
   flex-shrink: 0;
+}
+
+.toggle {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 9px;
+  flex-shrink: 0;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.toggle.on {
+  background: var(--c2);
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle.on::after {
+  transform: translateX(14px);
+}
+
+.palette-item.theme-active {
+  background: rgba(255,255,255,0.04);
+}
+
+.palette-item.theme-active .palette-item-label {
+  color: var(--c2);
+}
+
+.theme-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-left: auto;
+  box-shadow: 0 0 6px currentColor;
 }
 
 /* Screen flash */
@@ -804,27 +852,59 @@ if (vibeMsg) {
 const paletteEl = document.getElementById('palette');
 const paletteInput = document.getElementById('paletteInput');
 const paletteItemsEl = document.getElementById('paletteItems');
+let zenMode = false;
 
 const commands = [
-  { icon: '\u{1F50A}', label: 'Toggle Sound',      hint: '',       action: () => { soundEnabled = !soundEnabled; showToast(soundEnabled ? '\u{1F50A}' : '\u{1F507}', soundEnabled ? 'Sound On' : 'Sound Off', ''); }},
-  { icon: '\u{1FA90}', label: 'Toggle Gravity',     hint: '',       action: () => { gravityMode = !gravityMode; showToast(gravityMode ? '\u{1FA90}' : '\u{1F32C}', gravityMode ? 'Gravity On' : 'Float Mode', ''); }},
-  { icon: '\u{1F30C}', label: 'Theme: Cyberpunk',   hint: 'default', action: () => { applyTheme('cyberpunk'); showToast('\u{1F30C}', 'Cyberpunk', ''); }},
-  { icon: '\u{1F30A}', label: 'Theme: Ocean',       hint: '',       action: () => { applyTheme('ocean'); showToast('\u{1F30A}', 'Ocean', ''); }},
-  { icon: '\u{1F305}', label: 'Theme: Sunset',      hint: '',       action: () => { applyTheme('sunset'); showToast('\u{1F305}', 'Sunset', ''); }},
-  { icon: '\u{1F7E2}', label: 'Theme: Matrix',      hint: '',       action: () => { applyTheme('matrix'); showToast('\u{1F7E2}', 'Matrix', ''); }},
-  { icon: '\u{1F9D8}', label: 'Zen Mode',           hint: '',       action: () => { document.getElementById('content').classList.toggle('zen'); }},
-  { icon: '\u{1F504}', label: 'Reset Your Vibes',   hint: '',       action: () => { state.vibes = 0; state.clicks = 0; document.getElementById('vibes').textContent = '0'; document.getElementById('clicks').textContent = '0'; }},
+  { icon: '\u{1F50A}', label: 'Sound',    type: 'toggle', getState: () => soundEnabled,  action: () => { soundEnabled = !soundEnabled; renderPalette(paletteInput.value); }},
+  { icon: '\u{1FA90}', label: 'Gravity',   type: 'toggle', getState: () => gravityMode,   action: () => { gravityMode = !gravityMode; renderPalette(paletteInput.value); }},
+  { icon: '\u{1F9D8}', label: 'Zen Mode',  type: 'toggle', getState: () => zenMode,       action: () => { zenMode = !zenMode; document.getElementById('content').classList.toggle('zen'); renderPalette(paletteInput.value); }},
+  { type: 'divider' },
+  { icon: '\u{1F30C}', label: 'Cyberpunk', type: 'theme', theme: 'cyberpunk', color: '#7b68ee' },
+  { icon: '\u{1F30A}', label: 'Ocean',     type: 'theme', theme: 'ocean',     color: '#3a7bd5' },
+  { icon: '\u{1F305}', label: 'Sunset',    type: 'theme', theme: 'sunset',    color: '#f09819' },
+  { icon: '\u{1F7E2}', label: 'Matrix',    type: 'theme', theme: 'matrix',    color: '#00ff41' },
+  { type: 'divider' },
+  { icon: '\u{1F504}', label: 'Reset Your Vibes', type: 'action', action: () => { state.vibes = 0; state.clicks = 0; document.getElementById('vibes').textContent = '0'; document.getElementById('clicks').textContent = '0'; showToast('\u{1F504}', 'Reset', 'Vibes cleared'); }},
 ];
 
 function renderPalette(filter) {
   const f = (filter || '').toLowerCase();
-  const filtered = commands.filter(c => c.label.toLowerCase().includes(f));
   paletteItemsEl.innerHTML = '';
-  filtered.forEach((c, i) => {
+
+  commands.forEach(c => {
+    if (c.type === 'divider') {
+      if (!f) {
+        const div = document.createElement('div');
+        div.style.cssText = 'height:1px;background:rgba(255,255,255,0.05);margin:0.3rem 0.6rem;';
+        paletteItemsEl.appendChild(div);
+      }
+      return;
+    }
+
+    if (f && !c.label.toLowerCase().includes(f)) return;
+
     const el = document.createElement('div');
     el.className = 'palette-item';
-    el.innerHTML = '<div class="palette-item-icon">' + c.icon + '</div><div class="palette-item-label">' + c.label + '</div>' + (c.hint ? '<div class="palette-item-hint">' + c.hint + '</div>' : '');
-    el.addEventListener('click', (e) => { e.stopPropagation(); c.action(); });
+
+    if (c.type === 'toggle') {
+      const isOn = c.getState();
+      el.innerHTML = '<div class="palette-item-icon">' + c.icon + '</div>'
+        + '<div class="palette-item-label">' + c.label + '</div>'
+        + '<div class="toggle ' + (isOn ? 'on' : '') + '"></div>';
+      el.addEventListener('click', (e) => { e.stopPropagation(); c.action(); });
+    } else if (c.type === 'theme') {
+      const active = currentTheme === c.theme;
+      if (active) el.classList.add('theme-active');
+      el.innerHTML = '<div class="palette-item-icon">' + c.icon + '</div>'
+        + '<div class="palette-item-label">' + c.label + '</div>'
+        + '<div class="theme-dot" style="color:' + c.color + ';background:' + (active ? c.color : 'transparent') + ';border:2px solid ' + c.color + '"></div>';
+      el.addEventListener('click', (e) => { e.stopPropagation(); applyTheme(c.theme); renderPalette(paletteInput.value); });
+    } else {
+      el.innerHTML = '<div class="palette-item-icon">' + c.icon + '</div>'
+        + '<div class="palette-item-label">' + c.label + '</div>';
+      el.addEventListener('click', (e) => { e.stopPropagation(); c.action(); });
+    }
+
     paletteItemsEl.appendChild(el);
   });
 }
