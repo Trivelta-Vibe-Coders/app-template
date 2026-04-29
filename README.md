@@ -42,9 +42,29 @@ In your Railway project dashboard:
 
 ## Environment Variables
 
+### Via Dashboard
+
 - Go to your service in Railway > **Variables** tab
 - Add any env vars your app needs (API keys, secrets, etc.)
-- Variables are available as `process.env.VAR_NAME` (Node), `os.environ["VAR_NAME"]` (Python), etc.
+
+### Via CLI
+
+Install the Railway CLI and link to your project:
+
+```bash
+npm install -g @railway/cli
+railway login
+railway link
+```
+
+Then set variables from the command line:
+
+```bash
+railway variable set SECRET_KEY=my-secret-value
+railway variable set DB_PASSWORD=abc123 API_KEY=xyz789
+```
+
+Variables are available as `process.env.VAR_NAME` (Node), `os.environ["VAR_NAME"]` (Python), etc.
 
 ## What Can I Build?
 
