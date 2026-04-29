@@ -197,13 +197,6 @@ h1 {
   animation: pulse 2s ease-in-out infinite;
 }
 
-.hint {
-  margin-top: 0.5rem;
-  color: rgba(255,255,255,0.12);
-  font-size: 0.7rem;
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-}
-
 /* Cursors */
 .remote-cursor {
   position: fixed;
@@ -214,14 +207,14 @@ h1 {
   filter: drop-shadow(0 0 6px var(--cursor-color));
 }
 
-/* Toasts */
+/* Toasts — positioned below the palette */
 .toast-container {
   position: fixed;
-  top: 1.5rem;
+  bottom: 1.5rem;
   right: 1.5rem;
   z-index: 100;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: 0.8rem;
 }
 
@@ -244,65 +237,83 @@ h1 {
 .toast-text { font-size: 0.85rem; color: rgba(255,255,255,0.8); }
 .toast-title { font-weight: 700; font-size: 0.8rem; color: var(--c1); }
 
-/* Command Palette */
-.palette-overlay {
-  position: fixed; inset: 0; z-index: 200;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(8px);
-  display: none;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 20vh;
-}
-
-.palette-overlay.open { display: flex; }
-
+/* Command Palette — persistent top-right panel */
 .palette {
-  background: rgba(15,15,25,0.95);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 16px;
-  width: min(500px, 90vw);
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 200;
+  background: rgba(10,10,18,0.7);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  width: 240px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
   overflow: hidden;
-  box-shadow: 0 25px 80px rgba(0,0,0,0.6);
 }
+
+.palette-header {
+  padding: 0.7rem 0.9rem 0.5rem;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.25);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.palette-header-icon { font-size: 0.8rem; }
 
 .palette-input {
   width: 100%;
-  background: transparent;
+  background: rgba(255,255,255,0.03);
   border: none;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
   color: #fff;
-  font-size: 1rem;
-  padding: 1rem 1.2rem;
+  font-size: 0.8rem;
+  padding: 0.6rem 0.9rem;
   outline: none;
   font-family: inherit;
 }
 
-.palette-input::placeholder { color: rgba(255,255,255,0.25); }
+.palette-input:focus {
+  background: rgba(255,255,255,0.05);
+}
 
-.palette-items { max-height: 300px; overflow-y: auto; padding: 0.5rem; }
+.palette-input::placeholder { color: rgba(255,255,255,0.2); font-size: 0.75rem; }
+
+.palette-items {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 0.3rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
 
 .palette-item {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  padding: 0.7rem 0.8rem;
-  border-radius: 10px;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.15s;
 }
 
 .palette-item:hover, .palette-item.active {
   background: rgba(255,255,255,0.06);
 }
 
-.palette-item-icon { font-size: 1.1rem; width: 28px; text-align: center; }
-.palette-item-label { font-size: 0.9rem; color: rgba(255,255,255,0.8); }
+.palette-item-icon { font-size: 0.9rem; width: 22px; text-align: center; flex-shrink: 0; }
+.palette-item-label { font-size: 0.78rem; color: rgba(255,255,255,0.7); }
 .palette-item-hint {
   margin-left: auto;
-  font-size: 0.7rem;
-  color: rgba(255,255,255,0.25);
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.2);
   font-family: 'SF Mono', monospace;
+  flex-shrink: 0;
 }
 
 /* Screen flash */
@@ -406,16 +417,14 @@ h1 {
     <div class="terminal-line"><span class="typewriter"><span id="typewriter-text"></span><span class="cursor"></span></span></div>
   </div>
   <p class="click-prompt">click anywhere to vibe</p>
-  <p class="hint">\u{2318}K to open command palette</p>
 </div>
 
 <div class="toast-container" id="toasts"></div>
 
-<div class="palette-overlay" id="paletteOverlay">
-  <div class="palette">
-    <input class="palette-input" id="paletteInput" placeholder="Type a command..." autocomplete="off" />
-    <div class="palette-items" id="paletteItems"></div>
-  </div>
+<div class="palette" id="palette">
+  <div class="palette-header"><span class="palette-header-icon">\u{26A1}</span> Controls</div>
+  <input class="palette-input" id="paletteInput" placeholder="Filter..." autocomplete="off" />
+  <div class="palette-items" id="paletteItems"></div>
 </div>
 
 <script>
@@ -730,7 +739,7 @@ setInterval(() => {
 }, 1000);
 
 document.addEventListener('click', (e) => {
-  if (e.target.closest('.palette-overlay') || e.target.closest('.palette')) return;
+  if (e.target.closest('.palette')) return;
 
   state.clicks++;
   state.vibes += 10;
@@ -791,8 +800,8 @@ if (vibeMsg) {
   }, 800);
 }
 
-// ── Command Palette ──
-const paletteOverlay = document.getElementById('paletteOverlay');
+// ── Command Palette (persistent panel) ──
+const paletteEl = document.getElementById('palette');
 const paletteInput = document.getElementById('paletteInput');
 const paletteItemsEl = document.getElementById('paletteItems');
 
@@ -813,53 +822,24 @@ function renderPalette(filter) {
   paletteItemsEl.innerHTML = '';
   filtered.forEach((c, i) => {
     const el = document.createElement('div');
-    el.className = 'palette-item' + (i === 0 ? ' active' : '');
+    el.className = 'palette-item';
     el.innerHTML = '<div class="palette-item-icon">' + c.icon + '</div><div class="palette-item-label">' + c.label + '</div>' + (c.hint ? '<div class="palette-item-hint">' + c.hint + '</div>' : '');
-    el.addEventListener('click', () => { c.action(); closePalette(); });
+    el.addEventListener('click', (e) => { e.stopPropagation(); c.action(); });
     paletteItemsEl.appendChild(el);
   });
 }
 
-function openPalette() {
-  paletteOverlay.classList.add('open');
-  paletteInput.value = '';
-  renderPalette('');
-  setTimeout(() => paletteInput.focus(), 50);
-}
-
-function closePalette() {
-  paletteOverlay.classList.remove('open');
-}
+renderPalette('');
 
 paletteInput.addEventListener('input', () => renderPalette(paletteInput.value));
-
-paletteInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { closePalette(); return; }
-  if (e.key === 'Enter') {
-    const active = paletteItemsEl.querySelector('.palette-item.active') || paletteItemsEl.querySelector('.palette-item');
-    if (active) active.click();
-    return;
-  }
-  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-    e.preventDefault();
-    const items = [...paletteItemsEl.querySelectorAll('.palette-item')];
-    const idx = items.findIndex(el => el.classList.contains('active'));
-    items.forEach(el => el.classList.remove('active'));
-    const next = e.key === 'ArrowDown' ? (idx + 1) % items.length : (idx - 1 + items.length) % items.length;
-    if (items[next]) { items[next].classList.add('active'); items[next].scrollIntoView({ block: 'nearest' }); }
-  }
-});
-
-paletteOverlay.addEventListener('click', (e) => {
-  if (e.target === paletteOverlay) closePalette();
-});
+paletteInput.addEventListener('click', (e) => e.stopPropagation());
 
 document.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
     e.preventDefault();
-    paletteOverlay.classList.contains('open') ? closePalette() : openPalette();
+    paletteInput.focus();
+    paletteInput.select();
   }
-  if (e.key === 'Escape' && paletteOverlay.classList.contains('open')) closePalette();
 });
 
 // ── Konami Code ──
@@ -867,7 +847,7 @@ const konamiSeq = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','Arro
 let konamiIdx = 0;
 
 document.addEventListener('keydown', (e) => {
-  if (paletteOverlay.classList.contains('open')) return;
+  if (document.activeElement === paletteInput) return;
   if (e.key === konamiSeq[konamiIdx]) {
     konamiIdx++;
     if (konamiIdx === konamiSeq.length) {
