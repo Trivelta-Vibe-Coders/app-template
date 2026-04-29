@@ -1,5 +1,7 @@
 const http = require("http");
 
+const vibeMessage = process.env.VIBE_MESSAGE || "";
+
 const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -108,6 +110,72 @@ const html = `<!DOCTYPE html>
       animation: pulse 2s ease-in-out infinite;
     }
 
+    .terminal {
+      margin-top: 2.5rem;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      max-width: 600px;
+      text-align: left;
+      backdrop-filter: blur(10px);
+    }
+
+    .terminal-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 0.8rem;
+    }
+
+    .terminal-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .terminal-dot:nth-child(1) { background: #ff5f57; }
+    .terminal-dot:nth-child(2) { background: #febc2e; }
+    .terminal-dot:nth-child(3) { background: #28c840; }
+
+    .terminal-line {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .terminal-line .prompt {
+      color: #28c840;
+    }
+
+    .terminal-line .cmd {
+      color: #00ced1;
+    }
+
+    .terminal-line .val {
+      color: #ff6ec7;
+    }
+
+    .typewriter {
+      display: inline;
+      color: #ff6ec7;
+    }
+
+    .typewriter .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 1em;
+      background: #ff6ec7;
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
     .particle {
       position: fixed;
       pointer-events: none;
@@ -171,6 +239,15 @@ const html = `<!DOCTYPE html>
         <div class="stat-label">Clicks</div>
       </div>
     </div>
+    <div class="terminal" id="terminal" style="display:none">
+      <div class="terminal-bar">
+        <div class="terminal-dot"></div>
+        <div class="terminal-dot"></div>
+        <div class="terminal-dot"></div>
+      </div>
+      <div class="terminal-line"><span class="prompt">$</span> <span class="cmd">railway variable get</span> VIBE_MESSAGE</div>
+      <div class="terminal-line"><span class="typewriter"><span id="typewriter-text"></span><span class="cursor"></span></span></div>
+    </div>
     <p class="click-prompt">click anywhere to vibe</p>
   </div>
 
@@ -193,6 +270,24 @@ const html = `<!DOCTYPE html>
       const s = String(elapsed % 60).padStart(2, '0');
       document.getElementById('clock').textContent = h + ':' + m + ':' + s;
     }, 1000);
+
+    const vibeMsg = "${vibeMessage.replace(/"/g, '\\"')}";
+    if (vibeMsg) {
+      const terminal = document.getElementById('terminal');
+      terminal.style.display = 'block';
+      const target = document.getElementById('typewriter-text');
+      let i = 0;
+      setTimeout(() => {
+        const type = () => {
+          if (i < vibeMsg.length) {
+            target.textContent += vibeMsg[i];
+            i++;
+            setTimeout(type, 50 + Math.random() * 60);
+          }
+        };
+        type();
+      }, 800);
+    }
 
     document.addEventListener('click', (e) => {
       clicks++;
